@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id              String             @id @default(uuid())
+  clerkUserId     String             @unique
+  email           String             @unique
+  name            String?
+  imageUrl        String?
+  warehouses      Warehouse[]
+  products        Product[]
+  stockMovements  StockMovement[]
+  reorderPolicies ReorderPolicy[]
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@map("users")
+}
+
+model Warehouse {
+  id            String          @id @default(uuid())
+  name          String
+  location      String?
+  isDefault     Boolean         @default(false)
+  userId        String
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products      Product[]
+  movements     StockMovement[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([userId])
+  @@map("warehouses")
+}
+
+model Product {
+  id               String          @id @default(uuid())
+  sku              String
+  name             String
+  category         String
+  unit              String          @default("pcs")
+  stockQuantity    Int             @default(0)
+  unitCost         Decimal         @default(0)
+  supplierName     String?
+  warehouseId      String
+  warehouse        Warehouse       @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movements        StockMovement[]
+  reorderPolicy    ReorderPolicy?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@unique([userId, sku])
+  @@index([warehouseId])
+  @@index([userId])
+  @@map("products")
+}
+
+model StockMovement {
+  id            String          @id @default(uuid())
+  type          MovementType
+  quantity      Int
+  unitCost      Decimal
+  referenceNote String?
+  supplierName  String?
+  source        MovementSource   @default(MANUAL)
+  status        MovementStatus  @default(COMPLETED)
+  movementDate  DateTime
+  productId     String
+  product       Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  warehouseId   String
+  warehouse     Warehouse       @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([userId])
+  @@index([warehouseId])
+  @@index([productId])
+  @@map("stock_movements")
+}
+
+model ReorderPolicy {
+  id             String    @id @default(uuid())
+  minimumStock   Int
+  reorderAmount  Int
+  lastAlertSent  DateTime?
+  productId      String    @unique
+  product        Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("reorder_policies")
+}
+
+enum MovementType {
+  RECEIVE
+  ISSUE
+  ADJUSTMENT
+}
+
+enum MovementSource {
+  MANUAL
+  AI_SCAN
+  IMPORT
+  SYSTEM
+}
+
+enum MovementStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
