@@ -9,54 +9,55 @@ datasource db {
 }
 
 model User {
-  id              String             @id @default(uuid())
-  clerkUserId     String             @unique
-  email           String             @unique
-  name            String?
-  imageUrl        String?
-  warehouses      Warehouse[]
-  products        Product[]
-  stockMovements  StockMovement[]
-  reorderPolicies ReorderPolicy[]
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  id               String            @id @default(uuid())
+  clerkUserId      String            @unique
+  email            String            @unique
+  name             String?
+  imageUrl         String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  products         Product[]
+  reorderPolicies  ReorderPolicy[]
+  stockMovements   StockMovement[]
+  warehouses       Warehouse[]
+  inventoryReports InventoryReport[]
 
   @@map("users")
 }
 
 model Warehouse {
-  id            String          @id @default(uuid())
-  name          String
-  location      String?
-  isDefault     Boolean         @default(false)
-  userId        String
-  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  products      Product[]
-  movements     StockMovement[]
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  id        String          @id @default(uuid())
+  name      String
+  location  String?
+  isDefault Boolean         @default(false)
+  userId    String
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  products  Product[]
+  movements StockMovement[]
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("warehouses")
 }
 
 model Product {
-  id               String          @id @default(uuid())
-  sku              String
-  name             String
-  category         String
-  unit              String          @default("pcs")
-  stockQuantity    Int             @default(0)
-  unitCost         Decimal         @default(0)
-  supplierName     String?
-  warehouseId      String
-  warehouse        Warehouse       @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
-  userId           String
-  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  movements        StockMovement[]
-  reorderPolicy    ReorderPolicy?
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  id            String          @id @default(uuid())
+  sku           String
+  name          String
+  category      String
+  unit          String          @default("pcs")
+  stockQuantity Int             @default(0)
+  unitCost      Decimal         @default(0)
+  supplierName  String?
+  warehouseId   String
+  userId        String
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  warehouse     Warehouse       @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  reorderPolicy ReorderPolicy?
+  movements     StockMovement[]
 
   @@unique([userId, sku])
   @@index([warehouseId])
@@ -65,23 +66,23 @@ model Product {
 }
 
 model StockMovement {
-  id            String          @id @default(uuid())
+  id            String         @id @default(uuid())
   type          MovementType
   quantity      Int
   unitCost      Decimal
   referenceNote String?
   supplierName  String?
-  source        MovementSource   @default(MANUAL)
-  status        MovementStatus  @default(COMPLETED)
+  source        MovementSource @default(MANUAL)
+  status        MovementStatus @default(COMPLETED)
   movementDate  DateTime
   productId     String
-  product       Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
   warehouseId   String
-  warehouse     Warehouse       @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
   userId        String
-  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  product       Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  warehouse     Warehouse      @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([warehouseId])
@@ -90,19 +91,46 @@ model StockMovement {
 }
 
 model ReorderPolicy {
-  id             String    @id @default(uuid())
-  minimumStock   Int
-  reorderAmount  Int
-  lastAlertSent  DateTime?
-  productId      String    @unique
-  product        Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
-  userId         String
-  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id            String    @id @default(uuid())
+  minimumStock  Int
+  reorderAmount Int
+  lastAlertSent DateTime?
+  productId     String    @unique
+  userId        String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  product       Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("reorder_policies")
+}
+
+model InventoryReport {
+  id          String   @id @default(uuid())
+  reportMonth DateTime
+  userId      String
+
+  totalReceived        Int
+  totalIssued          Int
+  receiptCount         Int
+  issueCount           Int
+  endingInventoryValue Decimal
+  lowStockCount        Int
+
+  aiSummary         String @db.Text
+  aiHighlights      Json
+  aiRisks           Json
+  aiRecommendations Json
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, reportMonth])
+  @@index([userId])
+  @@map("inventory_reports")
 }
 
 enum MovementType {

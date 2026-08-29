@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
-import { Boxes, ClipboardPlus, LayoutDashboard } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+  Boxes,
+  ClipboardPlus,
+  LayoutDashboard,
+  FileText,
+} from "lucide-react";import { Button } from "@/components/ui/button";
 import { checkUser } from "@/lib/checkUser";
 
 export default async function Header() {
@@ -38,6 +42,13 @@ export default async function Header() {
               <Button>
                 <ClipboardPlus size={16} />
                 Record Movement
+              </Button>
+            </Link>
+
+            <Link href="/reports">
+              <Button variant="outline">
+              <FileText size={16} />
+              Reports
               </Button>
             </Link>
             <UserButton appearance={{ elements: { avatarBox: "w-9 h-9" } }} />

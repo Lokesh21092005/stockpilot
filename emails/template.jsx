@@ -24,6 +24,76 @@ export default function EmailTemplate({ type = "low-stock", userName = "", data 
     );
   }
 
+  if (type === "monthly-report") {
+  return (
+    <Html>
+      <Head />
+      <Preview>Monthly inventory report from StockPilot</Preview>
+
+      <Body style={styles.body}>
+        <Container style={styles.container}>
+          <Heading style={styles.title}>
+            Monthly Inventory Report
+          </Heading>
+
+          <Text style={styles.text}>
+            Hi {userName || "there"}, here is your latest
+            StockPilot inventory analysis.
+          </Text>
+
+          <Section style={styles.card}>
+            <Text style={styles.text}>
+              Inventory value
+            </Text>
+
+            <Text style={styles.big}>
+              ₹
+              {Number(
+                data.endingInventoryValue || 0
+              ).toFixed(0)}
+            </Text>
+
+            <Text style={styles.text}>
+              Units received: {data.totalReceived}
+            </Text>
+
+            <Text style={styles.text}>
+              Units issued: {data.totalIssued}
+            </Text>
+
+            <Text style={styles.text}>
+              Low-stock SKUs: {data.lowStockCount}
+            </Text>
+          </Section>
+
+          <Heading style={{ ...styles.title, fontSize: "20px" }}>
+            AI Summary
+          </Heading>
+
+          <Text style={styles.text}>
+            {data.aiSummary}
+          </Text>
+
+          <Heading style={{ ...styles.title, fontSize: "18px" }}>
+            Recommendations
+          </Heading>
+
+          {Array.isArray(data.aiRecommendations) &&
+            data.aiRecommendations.map((item, index) => (
+              <Text key={index} style={styles.text}>
+                • {item}
+              </Text>
+            ))}
+
+          <Text style={styles.footer}>
+            StockPilot — inventory operations made easier.
+          </Text>
+        </Container>
+      </Body>
+    </Html>
+  );
+}
+
   return (
     <Html>
       <Head />
